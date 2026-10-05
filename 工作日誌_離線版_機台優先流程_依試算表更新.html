@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#16324f" /><meta name="description" content="場所＋工作模組的每日工作日誌工具" />
+  <title>工作日誌｜離線版（依試算表更新）</title>
+<style>
+:root {
+  --ink: #14293e;
+  --navy: #16324f;
+  --navy-2: #214665;
+  --blue: #2877a9;
+  --blue-soft: #e8f2f7;
+  --yellow: #fff3bf;
+  --yellow-2: #ffe48b;
+  --orange: #ef9a3e;
+  --paper: #f6f8f7;
+  --line: #d7e0e4;
+  --muted: #71818a;
+  --white: #ffffff;
+  --shadow: 0 16px 34px rgba(18, 46, 67, 0.08);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Noto Sans TC", system-ui, sans-serif; }
+button, input, textarea, select { font: inherit; }
+button { cursor: pointer; }
+.shell { min-height: 100vh; }
+.topbar { height: 72px; background: var(--navy); color: var(--white); display: flex; align-items: center; justify-content: space-between; padding: 0 clamp(20px, 5vw, 68px); }
+.brand { display: inline-flex; gap: 12px; align-items: center; color: inherit; text-decoration: none; }
+.brand strong { display: block; letter-spacing: .14em; font-size: 15px; }
+.brand small { display: block; margin-top: 3px; color: #a9c4d2; font: 10px "Space Mono", monospace; letter-spacing: .18em; }
+.brand-mark { width: 30px; height: 30px; border: 1px solid rgba(255,255,255,.5); display: flex; align-items: end; gap: 3px; padding: 6px; transform: rotate(-5deg); }
+.brand-mark i { width: 4px; display: block; background: var(--yellow-2); }
+.brand-mark i:nth-child(1) { height: 10px; }.brand-mark i:nth-child(2) { height: 16px; }.brand-mark i:nth-child(3) { height: 7px; }
+.topbar-note { color: #d5e5ec; font-size: 12px; letter-spacing: .05em; display: flex; gap: 8px; align-items: center; }
+.live-dot { width: 7px; height: 7px; background: #9cdb84; border-radius: 50%; box-shadow: 0 0 0 5px rgba(156,219,132,.12); }
+main { max-width: 1440px; margin: 0 auto; padding: 0 clamp(18px, 5vw, 68px) 80px; }
+.hero { min-height: 280px; display: flex; justify-content: space-between; align-items: end; gap: 30px; padding: 58px 0 42px; border-bottom: 1px solid var(--line); }
+.eyebrow { margin: 0 0 8px; color: var(--blue); font: 700 10px "Space Mono", monospace; letter-spacing: .17em; }
+h1, h2, p { margin-top: 0; }
+h1 { margin-bottom: 14px; font-size: clamp(34px, 5vw, 64px); line-height: 1.12; letter-spacing: -.045em; font-weight: 800; }
+h1 em { color: var(--blue); font-style: normal; position: relative; }
+h1 em::after { content: ""; position: absolute; left: 0; right: 0; bottom: -5px; height: 7px; background: var(--yellow-2); z-index: -1; transform: skew(-15deg); }
+.hero-copy { max-width: 560px; color: var(--muted); line-height: 1.9; font-size: 14px; margin-bottom: 0; }
+.hero-stamp { width: 120px; height: 120px; flex: 0 0 auto; border: 1px solid var(--navy); border-radius: 50%; display: grid; place-content: center; text-align: center; transform: rotate(8deg); color: var(--navy); }
+.hero-stamp span, .hero-stamp small { display: block; font-size: 11px; letter-spacing: .12em; }.hero-stamp b { font: 700 26px "Space Mono", monospace; margin: 3px 0; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(330px, .72fr); gap: clamp(28px, 4vw, 72px); padding-top: 42px; align-items: start; }
+.section-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }.section-heading-spaced { margin-top: 42px; }
+.section-index { color: var(--blue); font: 700 12px "Space Mono", monospace; border: 1px solid #a8cad9; padding: 7px 8px; align-self: flex-start; }
+.section-heading h2 { margin: 0; font-size: 20px; letter-spacing: -.03em; }.section-heading .eyebrow { margin-bottom: 2px; font-size: 9px; }
+.small-button { margin-left: auto; background: transparent; border: 1px solid var(--blue); color: var(--blue); padding: 8px 12px; font-size: 12px; font-weight: 700; }.small-button:hover { background: var(--blue-soft); }
+.card { background: var(--white); border: 1px solid var(--line); padding: clamp(18px, 2.4vw, 28px); box-shadow: var(--shadow); }
+.basic-card { border-top: 5px solid var(--yellow-2); }.field-grid { display: grid; gap: 18px; }.field-grid.two { grid-template-columns: repeat(2, minmax(0,1fr)); }.field-wide { grid-column: span 2; }
+.field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }.field > span { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .05em; }.field b { color: var(--orange); }
+.input[multiple] { min-height:92px; padding:6px; }.input[multiple] option { padding:3px 5px; }.companion-picker { display:flex; flex-wrap:wrap; gap:5px 8px; padding:7px 8px; border:1px solid #d3dde1; background:#fffdf0; min-height:40px; align-items:center; }.companion-picker label { display:inline-flex; align-items:center; gap:3px; white-space:nowrap; font-size:11px; cursor:pointer; }.companion-picker input { accent-color:var(--blue); }.companion-picker .companion-custom { gap:5px; cursor:default; }.companion-picker .companion-custom span { color:var(--muted); font-weight:700; }.companion-picker .companion-custom input { width:110px; min-height:26px; padding:4px 6px; border:1px solid #d3dde1; background:#fffdf0; color:var(--ink); accent-color:initial; }.pump-inline.hidden { display:none !important; }.pump-inline .section-heading { margin-top:16px; }.pump-inline .pump-card { margin-top:0; }.input { width: 100%; border: 1px solid #d3dde1; background: var(--yellow); color: var(--ink); padding: 11px 12px; min-height: 44px; outline: none; border-radius: 0; transition: border .15s, box-shadow .15s, background .15s; }.input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(40,119,169,.13); background: #fff9da; }.textarea { min-height: 76px; resize: vertical; line-height: 1.65; }.textarea.tall { min-height: 112px; }.mono { font-family: "Space Mono", monospace; letter-spacing: .06em; }
+.time-strip { display: grid; grid-template-columns: minmax(0,1fr) 26px minmax(0,1fr) minmax(135px, .8fr); align-items: end; gap: 12px; padding-top: 20px; }.time-arrow { padding-bottom: 12px; text-align: center; color: var(--blue); font-size: 20px; }.wait-result { min-height: 44px; background: var(--blue-soft); padding: 6px 10px; border-left: 3px solid var(--blue); }.wait-result span, .wait-result small { display: block; color: var(--muted); font-size: 10px; }.wait-result strong { display: block; font: 700 14px "Space Mono", monospace; color: var(--navy); margin: 2px 0; }
+.quick-label { color: var(--muted); font-size: 11px; margin: 22px 0 9px; font-weight: 700; letter-spacing: .06em; }.chip-row { display: flex; flex-wrap: wrap; gap: 7px; }.chip { background: var(--white); color: var(--blue); border: 1px solid #a8cad9; padding: 7px 10px; font-size: 12px; }.chip:hover, .chip:focus-visible { background: var(--blue-soft); border-color: var(--blue); }.chip-blue { background: var(--blue-soft); }.summary-category-buttons { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }.summary-category { border:1px solid #c8b78c; background:#fff7df; color:#765d1f; border-radius:6px; padding:8px 10px; font-size:11px; font-weight:800; cursor:pointer; }.summary-category:hover,.summary-category.active { background:#f5e5b4; border-color:#b89032; }.summary-options { margin-top:8px; border:1px solid #e1d8bd; background:#fffdf7; padding:10px; }.summary-options[hidden] { display:none !important; }.summary-options-title { color:#766b4e; font-size:11px; font-weight:800; margin-bottom:8px; }.summary-options-body { display:flex; flex-wrap:wrap; gap:5px; }.summary-option { border-radius:5px; padding:7px 10px; font-size:11px; font-weight:700; cursor:pointer; }.summary-safety { background:#e2f1e6; border:1px solid #87b795; color:#2f6840; }.summary-air { background:#dff3f7; border:1px solid #75b9c8; color:#246b7d; }.summary-transport { background:#fff0d9; border:1px solid #e5b15c; color:#9a5d00; }.summary-organic { background:#ffe2e2; border:1px solid #d99292; color:#9b3f3f; }.summary-drill { background:#e9ddff; border:1px solid #ae8be0; color:#603d9b; }.summary-height { background:#e6e8ff; border:1px solid #9aa4e5; color:#4d589b; }.summary-clean { background:#edf2f5; border:1px solid #a9bbc7; color:#48616e; }.summary-inspect { background:#f0e6ff; border:1px solid #ba99df; color:#67418d; }.summary-option:hover { filter:brightness(.95); }
+.tool-category-buttons { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }.tool-category { border:1px solid #b8c9a7; background:#eef6e8; color:#4d7040; border-radius:6px; padding:8px 10px; font-size:11px; font-weight:800; cursor:pointer; }.tool-category:hover,.tool-category.active { background:#d6e9c8; border-color:#7da36b; }.tool-options { margin-top:8px; border:1px solid #d4dfcc; background:#fbfdf9; padding:10px; }.tool-options-title { color:#58734e; font-size:11px; font-weight:800; margin-bottom:8px; }.tool-table { width:100%; border-collapse:collapse; display:block; }.tool-table tbody { display:flex; flex-wrap:wrap; gap:4px 6px; }.tool-table tr { display:block; }.tool-table td { border:0; padding:0; }.tool-option { border:1px solid #c9d9c1; background:#fff; color:#426239; border-radius:5px; padding:7px 10px; margin:3px; cursor:pointer; font-size:11px; }.tool-option:hover { background:#e5f1df; border-color:#7da36b; }
+.card-hint { color: var(--muted); font-size: 12px; line-height: 1.7; margin-bottom: 16px; }.machine-rows { display:flex; flex-direction:column; gap:12px; margin-top:14px; }.machine-row-card { border:1px solid var(--line); background:#fffdf7; padding:12px; }.machine-row-head { display:grid; grid-template-columns:26px minmax(0,1fr) minmax(0,1.3fr) 32px; gap:8px; align-items:center; }.machine-input { min-width:0; width:100%; border:1px solid #d3dde1; background:#fffdf0; padding:10px 9px; color:var(--ink); }.machine-input:focus,.machine-task-input:focus { outline:2px solid rgba(40,119,169,.2); border-color:var(--blue); }.machine-row-card .row-number { color:var(--blue); font:700 11px "Space Mono",monospace; }.machine-row-card .remove-row { height:30px; }.machine-task-wrap { margin:10px 0 0 34px; }.machine-task-label { display:block; color:var(--muted); font-size:12px; font-weight:700; margin-bottom:6px; }.machine-task-input { width:100%; min-height:62px; resize:vertical; border:1px solid #d3dde1; background:#fff; padding:9px; color:var(--ink); line-height:1.6; }.machine-phrase-categories { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }.machine-phrase-category { border:1px solid #b8c9a7; background:#eef6e8; color:#4d7040; border-radius:6px; padding:7px 9px; font-size:10px; font-weight:800; cursor:pointer; }.machine-phrase-category:hover,.machine-phrase-category.active { background:#d6e9c8; border-color:#7da36b; }.machine-phrase-options { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }.machine-phrase-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }.machine-phrase { border:1px solid #b7ccd5; background:var(--blue-soft); color:var(--blue); padding:6px 8px; font-size:11px; }.machine-phrase.phrase-organic { background:#fff0d9; border-color:#e5b15c; color:#9a5d00; }.machine-phrase.phrase-drill { background:#e9ddff; border-color:#ae8be0; color:#603d9b; }.machine-phrase.phrase-fab-site { background:#dff3f7; border-color:#75b9c8; color:#246b7d; }.machine-phrase.phrase-general { background:var(--blue-soft); border-color:#b7ccd5; color:var(--blue); }.machine-phrase.phrase-organic:hover { background:#ffe4b5; }.machine-phrase.phrase-drill:hover { background:#d9c6ff; }.machine-phrase.phrase-fab-site:hover { background:#c8eaf0; }.phrase-legend { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 2px; }.phrase-legend span { display:inline-block; border-radius:10px; padding:3px 8px; font-size:10px; font-weight:800; }.legend-organic { background:#fff0d9; color:#9a5d00; }.legend-drill { background:#e9ddff; color:#603d9b; }.legend-fab { background:#dff3f7; color:#246b7d; }.legend-general { background:var(--blue-soft); color:var(--blue); }.machine-phrase:hover { background:#d8ebf3; border-color:var(--blue); }.pump-transport-box { margin-top:18px; padding:13px; background:#f0f6e9; border:1px solid #c8dbb8; }.machine-drill-panel { display:block; clear:both; width:calc(100% - 34px); margin:16px 0 0 34px; padding:12px; background:#f7f8fb; border:1px solid #cfd9e5; }.machine-drill-title { display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--navy); font-size:12px; font-weight:800; margin-bottom:10px; padding:0; cursor:pointer; }.machine-drill-content[hidden] { display:none !important; }.drill-arrow { float:right; font-size:16px; }.machine-hole-field { max-width:260px; margin-bottom:10px; }.machine-drill-rows { display:flex; flex-direction:column; gap:9px; }.machine-drill-row { display:grid; grid-template-columns:1.2fr .7fr .7fr .7fr 1fr 1fr 1fr 32px; gap:6px; align-items:end; }.drill-row-secondary .machine-drill-field > span { visibility:hidden; }.machine-drill-field { display:flex; flex-direction:column; gap:5px; min-width:0; }.machine-drill-field span { color:var(--muted); font-size:10px; font-weight:700; }.machine-drill-field .input { min-height:38px; padding:7px; font-size:11px; }.machine-drill-panel > .small-button { margin-top:10px; margin-left:0; }.pump-transport-box .selector-label { display:block; margin-bottom:10px; }.transport-preview { margin:10px 0 0; color:#547747; }.machine-phrase-groups { display:block; margin-top:10px; }.machine-phrase-group { background:#f7faf8; border:1px solid #dce7e2; padding:9px; }.machine-phrase-title { display:block; color:var(--navy); font-size:11px; font-weight:800; margin-bottom:7px; }.machine-phrase-group:nth-child(1) .machine-phrase-title { color:#527c91; }.machine-phrase-group:nth-child(2) .machine-phrase-title { color:#b06b3d; }.machine-phrase-group:nth-child(3) .machine-phrase-title { color:#5e7b50; }
+.drill-rows { display: flex; flex-direction: column; gap: 10px; }.drill-row { display: grid; grid-template-columns: 26px 1.05fr .62fr .62fr .7fr .8fr .8fr 1.2fr 32px; gap: 6px; align-items: center; }.drill-row .row-number { color: var(--blue); font: 700 11px "Space Mono", monospace; }.drill-row input { min-width: 0; width: 100%; border: 1px solid #d3dde1; background: #fffdf0; padding: 9px 7px; color: var(--ink); font-size: 12px; }.drill-row input:focus { outline: 2px solid rgba(40,119,169,.2); border-color: var(--blue); }.remove-row { height: 30px; border: 0; color: #b06b58; background: #fff1ed; font-size: 17px; }.remove-row:hover { background: #ffe3dc; }
+.organic-card { border-left: 4px solid #799c5f; }.organic-banner { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f6e9; margin-bottom: 16px; }.organic-icon { width: 30px; height: 30px; display: grid; place-content: center; background: #d9eacb; color: #4d7739; font-size: 19px; }.organic-banner strong, .organic-banner small { display: block; }.organic-banner strong { font-size: 13px; }.organic-banner small { color: #68805b; font-size: 11px; margin-top: 3px; }.phrase-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 7px; margin-bottom: 20px; }.phrase { text-align: left; background: #fff; border: 1px solid #b7d0a7; color: #547747; padding: 9px 10px; font-size: 12px; line-height: 1.45; }.phrase:hover { background: #f0f6e9; }.summary-field { margin-top: 20px; }
+.pump-card { border-left: 4px solid #4b91ac; }.pump-banner { display: flex; align-items: center; gap: 12px; padding: 12px; background: #eaf4f7; margin-bottom: 16px; }.pump-icon { width: 30px; height: 30px; display: grid; place-content: center; background: #cde5ec; color: #24647e; font: 700 14px "Space Mono", monospace; }.pump-banner strong, .pump-banner small { display: block; }.pump-banner strong { font-size: 13px; }.pump-banner small { color: #527988; font-size: 11px; margin-top: 3px; }.pump-card .phrase { border-color: #abd0dc; color: #24647e; }.pump-card .phrase:hover { background: #eaf4f7; }
+.output-sticky { position: sticky; top: 20px; background: var(--navy); color: #fff; padding: 23px; box-shadow: 0 20px 46px rgba(17, 43, 62, .2); }.output-head { display: flex; justify-content: space-between; align-items: start; gap: 14px; }.output-head .eyebrow { color: #9dc5d5; }.output-head h2 { margin: 0 0 16px; font-size: 22px; }.output-status { background: rgba(255,243,191,.13); color: var(--yellow-2); border: 1px solid rgba(255,243,191,.3); padding: 6px 8px; font-size: 10px; white-space: nowrap; }.output-status i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #9cdb84; margin-right: 5px; }.format-ruler { display: flex; justify-content: space-between; color: #9dc5d5; font: 10px "Space Mono", monospace; border-top: 1px solid rgba(255,255,255,.2); padding: 13px 0 8px; }.output-area { min-height: 540px; width: 100%; display: block; resize: vertical; background: #fdfcf2; color: var(--ink); border: 0; padding: 17px; font-size: 13px; line-height: 1.8; outline: none; }.output-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }.primary-button, .ghost-button { border: 0; min-height: 44px; font-size: 12px; font-weight: 800; }.primary-button { background: var(--yellow-2); color: var(--navy); display: flex; align-items: center; justify-content: space-between; padding: 0 13px; }.primary-button:hover { background: #fff0a8; }.primary-button kbd { font: 10px "Space Mono", monospace; border: 1px solid rgba(22,50,79,.35); padding: 3px 5px; }.ghost-button { background: rgba(255,255,255,.1); color: white; padding: 0 14px; border: 1px solid rgba(255,255,255,.3); }.ghost-button:hover { background: rgba(255,255,255,.18); }.copy-hint { min-height: 19px; margin: 10px 0 22px; color: #a9c4d2; font-size: 11px; }.copy-hint.success { color: #c8eb9d; }.output-order { border-top: 1px solid rgba(255,255,255,.18); padding-top: 16px; color: #a9c4d2; font-size: 11px; }.output-order ol { padding-left: 20px; margin: 10px 0 0; line-height: 1.9; color: #e4eef1; }
+footer { max-width: 1440px; margin: 0 auto; padding: 22px clamp(18px, 5vw, 68px) 30px; border-top: 1px solid var(--line); color: var(--muted); display: flex; justify-content: space-between; font: 10px "Space Mono", monospace; letter-spacing: .08em; }
+@media (max-width: 980px) { .workspace { grid-template-columns: 1fr; }.output-sticky { position: static; }.output-area { min-height: 370px; }.output-column { order: -1; } }
+@media (max-width: 640px) { .topbar { height: 62px; padding: 0 16px; }.topbar-note { font-size: 10px; }.hero { min-height: 0; padding: 38px 0 30px; align-items: start; }.hero-stamp { width: 82px; height: 82px; }.hero-stamp b { font-size: 18px; }.hero-stamp span, .hero-stamp small { font-size: 8px; }main { padding-left: 14px; padding-right: 14px; }.workspace { padding-top: 28px; gap: 36px; }.field-grid.two { grid-template-columns: 1fr; }.field-wide { grid-column: auto; }.time-strip { grid-template-columns: 1fr 20px 1fr; }.wait-result { grid-column: 1 / -1; }.phrase-list { grid-template-columns: 1fr; }.drill-card { overflow-x: auto; }.drill-rows { min-width: 720px; }.output-sticky { padding: 17px; }.output-area { min-height: 400px; font-size: 12px; }.section-heading-spaced { margin-top: 32px; }footer { padding-left: 14px; padding-right: 14px; } }
+
+
+.mode-card{border-top:5px solid var(--blue)}.mode-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.mode-button{min-height:104px;text-align:left;padding:13px 11px;border:1px solid #b7ccd5;background:#fff;color:var(--ink);transition:.15s}.mode-button b{display:block;font-size:13px;line-height:1.4}.mode-button small{display:block;margin-top:8px;color:var(--muted);font-size:10px;line-height:1.55}.mode-button:hover,.mode-button.active{background:var(--blue-soft);border:2px solid var(--blue);padding:12px 10px}.selector-card{border-left:4px solid var(--orange)}.selector-row{margin-bottom:20px}.selector-label{display:block;font-weight:800;font-size:13px;margin-bottom:10px}.selector-label b{color:var(--orange)}.selector-label small{font-weight:400;color:var(--muted);font-size:11px}.place-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.place-option{display:flex;gap:10px;align-items:start;border:1px solid var(--line);padding:13px;background:#fff;cursor:pointer}.place-option.selected{border-color:var(--blue);background:var(--blue-soft)}.place-option input{accent-color:var(--blue);margin-top:4px}.place-option strong,.place-option small{display:block}.place-option strong{font-size:14px}.place-option small{color:var(--muted);font-size:11px;margin-top:4px}.module-options{display:grid;visibility:visible;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.module-option{display:block;border:1px solid var(--line);padding:11px 8px;background:#fff;cursor:pointer}.module-option:has(input:checked){background:var(--yellow);border-color:#e1bd44}.module-option input{accent-color:var(--blue);margin:0 5px 7px 0}.module-option span{font-size:12px;font-weight:800}.module-option small{display:block;color:var(--muted);font-size:10px;line-height:1.4}.combo-note{margin-top:18px;background:var(--navy);color:#fff;padding:10px 12px;font-size:12px}.hidden{display:none!important}.conditional-section{transition:opacity .2s}.pump-card .phrase{border-color:#abd0dc;color:#24647e}.pump-card .phrase:hover{background:#eaf4f7}.organic-card .phrase{border-color:#b7d0a7;color:#547747}.organic-card .phrase:hover{background:#f0f6e9}@media(max-width:980px){.mode-grid{grid-template-columns:repeat(3,1fr)}.module-options{grid-template-columns:repeat(3,1fr)}}@media(max-width:640px){.mode-grid{grid-template-columns:repeat(2,1fr)}.place-options,.module-options{grid-template-columns:1fr 1fr}.module-option{padding:9px 6px}}
+
+
+/* 極致緊湊版面：減少橫向寬度與所有非必要留白 */
+main { max-width: 1120px; padding-left: 20px; padding-right: 20px; padding-bottom: 44px; }
+.hero { min-height: 190px; padding: 28px 0 22px; gap: 18px; }
+.hero-copy { font-size: 12px; line-height: 1.55; max-width: 500px; }
+.hero-stamp { width: 86px; height: 86px; }
+.hero-stamp b { font-size: 20px; }
+.workspace { grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr); gap: 18px; padding-top: 20px; }
+.section-heading { gap: 8px; margin-bottom: 9px; }
+.section-heading-spaced { margin-top: 20px; }
+.section-index { padding: 4px 6px; font-size: 10px; }
+.section-heading h2 { font-size: 16px; }
+.section-heading .eyebrow { font-size: 8px; }
+.card { padding: 13px; }
+.field-grid { gap: 9px; }
+.field-grid.two { gap: 9px; }
+.field { gap: 4px; }
+.field > span { font-size: 11px; }
+.input { min-height: 36px; padding: 7px 8px; font-size: 12px; }
+.textarea { min-height: 60px; }
+.textarea.tall { min-height: 76px; }
+.time-strip { gap: 7px; padding-top: 10px; }
+.time-arrow { padding-bottom: 8px; font-size: 16px; }
+.wait-result { min-height: 36px; padding: 4px 7px; }
+.wait-result strong { font-size: 12px; }
+.quick-label { margin: 12px 0 6px; font-size: 10px; }
+.chip-row, .tool-category-buttons, .summary-category-buttons { gap: 4px; }
+.tool-category, .summary-category { padding: 5px 7px; font-size: 10px; border-radius: 4px; }
+.tool-options, .summary-options { margin-top: 5px; padding: 7px; }
+.tool-options-title, .summary-options-title { margin-bottom: 5px; font-size: 10px; }
+.tool-option, .summary-option { padding: 5px 7px; margin: 2px; font-size: 10px; }
+.companion-picker { gap: 3px 6px; padding: 5px 6px; min-height: 34px; }
+.companion-picker label { font-size: 10px; }
+.companion-picker .companion-custom input { width: 88px; min-height: 23px; padding: 3px 5px; font-size: 10px; }
+.place-options { gap: 6px; }
+.place-option { gap: 6px; padding: 8px; }
+.place-option strong { font-size: 12px; }
+.place-option small { font-size: 10px; margin-top: 2px; }
+.mode-grid { gap: 5px; }
+.mode-button { min-height: 76px; padding: 8px; }
+.mode-button b { font-size: 11px; }
+.mode-button small { margin-top: 4px; font-size: 9px; line-height: 1.35; }
+.machine-rows { gap: 7px; margin-top: 9px; }
+.machine-row-card { padding: 8px; }
+.machine-row-head { grid-template-columns: 22px minmax(0,1fr) minmax(0,1.15fr) 26px; gap: 5px; }
+.machine-input { padding: 7px; font-size: 11px; }
+.machine-task-wrap { margin: 7px 0 0 27px; }
+.machine-task-input { min-height: 48px; padding: 7px; font-size: 11px; }
+.machine-phrase-categories { gap: 3px; margin-top: 5px; }
+.machine-phrase-category { padding: 5px 6px; font-size: 9px; border-radius: 4px; }
+.machine-phrase-options { gap: 3px; margin-top: 4px; }
+.machine-phrase { padding: 4px 6px; font-size: 10px; }
+.machine-drill-panel { width: calc(100% - 27px); margin: 9px 0 0 27px; padding: 8px; }
+.machine-drill-title { font-size: 11px; margin-bottom: 7px; }
+.machine-drill-row { gap: 4px; }
+.machine-drill-field { gap: 3px; }
+.machine-drill-field span { font-size: 9px; }
+.machine-drill-field .input { min-height: 32px; padding: 5px; font-size: 10px; }
+.pump-transport-box { margin-top: 10px; padding: 9px; }
+.output-sticky { top: 12px; padding: 14px; }
+.output-head { gap: 8px; }
+.output-head h2 { margin-bottom: 9px; font-size: 17px; }
+.format-ruler { padding: 8px 0 5px; }
+.output-area { min-height: 430px; padding: 10px; font-size: 11px; line-height: 1.55; }
+.output-actions { gap: 5px; margin-top: 7px; }
+.primary-button, .ghost-button { min-height: 34px; font-size: 10px; }
+.primary-button { padding: 0 8px; }
+.ghost-button { padding: 0 9px; }
+.copy-hint { margin: 7px 0 13px; font-size: 10px; }
+.output-order { padding-top: 10px; font-size: 10px; }
+.output-order ol { margin-top: 5px; line-height: 1.55; padding-left: 16px; }
+@media (max-width: 980px) {
+  main { max-width: 760px; }
+  .workspace { gap: 14px; }
+}
+@media (max-width: 640px) {
+  main { padding-left: 10px; padding-right: 10px; }
+  .hero { padding: 22px 0 16px; }
+  .workspace { padding-top: 14px; gap: 20px; }
+  .card { padding: 10px; }
+  .section-heading-spaced { margin-top: 16px; }
+}
+
+/* 小字體・扁平選擇框・寬版工作區 */
+main { max-width: 1440px; padding-left: clamp(18px, 5vw, 68px); padding-right: clamp(18px, 5vw, 68px); }
+.hero { min-height: 220px; padding: 38px 0 30px; }
+.workspace { grid-template-columns: minmax(0, 1.45fr) minmax(330px, .72fr); gap: clamp(28px, 4vw, 58px); padding-top: 28px; }
+.card { padding: 16px; box-shadow: 0 7px 16px rgba(18,46,67,.05); }
+.section-heading-spaced { margin-top: 28px; }
+.section-heading h2 { font-size: 17px; }
+.section-heading .eyebrow { font-size: 8px; }
+.section-index { padding: 4px 6px; font-size: 10px; }
+.field-grid, .field-grid.two { gap: 8px; }
+.field { gap: 3px; }
+.field > span { font-size: 10px; letter-spacing: .03em; }
+.input { min-height: 30px; padding: 5px 7px; font-size: 11px; }
+.textarea { min-height: 52px; }
+.textarea.tall { min-height: 66px; }
+.selector-label { font-size: 11px; margin-bottom: 6px; }
+.selector-row { margin-bottom: 12px; }
+/* 場所：由大卡片改為扁平小型選項 */
+.place-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.place-option { flex: 0 0 auto; min-width: 150px; gap: 5px; padding: 6px 8px; border-radius: 4px; }
+.place-option input { margin-top: 2px; }
+.place-option strong { font-size: 11px; }
+.place-option small { font-size: 9px; margin-top: 1px; }
+/* 工作模組／快速分類：改成小型標籤 */
+.module-options { display: flex; flex-wrap: wrap; gap: 5px; }
+.module-option { flex: 0 0 auto; min-width: 98px; padding: 6px 7px; border-radius: 4px; }
+.module-option input { margin: 0 3px 0 0; }
+.module-option span { font-size: 10px; }
+.module-option small { display: inline; margin-left: 3px; font-size: 8px; }
+.quick-label { margin: 10px 0 5px; font-size: 9px; }
+.tool-category-buttons, .summary-category-buttons { gap: 4px; margin: 6px 0; }
+.tool-category, .summary-category { padding: 4px 7px; font-size: 9px; line-height: 1.2; border-radius: 3px; }
+.tool-options, .summary-options { margin-top: 4px; padding: 6px; }
+.tool-options-title, .summary-options-title { font-size: 9px; margin-bottom: 4px; }
+.tool-table tbody, .summary-options-body { gap: 2px 4px; }
+.tool-option, .summary-option { padding: 4px 6px; margin: 1px; font-size: 9px; border-radius: 3px; }
+.companion-picker { gap: 2px 5px; min-height: 29px; padding: 4px 5px; }
+.companion-picker label { font-size: 9px; }
+.companion-picker .companion-custom input { width: 84px; min-height: 21px; font-size: 9px; }
+.time-strip { padding-top: 8px; gap: 6px; }
+.time-arrow { font-size: 14px; padding-bottom: 5px; }
+.wait-result { min-height: 30px; padding: 3px 5px; }
+.wait-result span, .wait-result small { font-size: 8px; }
+.wait-result strong { font-size: 10px; }
+.machine-rows { gap: 6px; margin-top: 7px; }
+.machine-row-card { padding: 7px; }
+.machine-row-head { gap: 4px; }
+.machine-input { padding: 5px 6px; font-size: 10px; }
+.machine-task-wrap { margin: 6px 0 0 26px; }
+.machine-task-label { font-size: 10px; margin-bottom: 3px; }
+.machine-task-input { min-height: 42px; padding: 6px; font-size: 10px; }
+.machine-phrase-categories { gap: 2px; margin-top: 4px; }
+.machine-phrase-category { padding: 4px 5px; font-size: 8px; }
+.machine-phrase-options { gap: 2px; margin-top: 3px; }
+.machine-phrase { padding: 3px 5px; font-size: 9px; }
+.machine-drill-panel { margin-top: 7px; padding: 7px; }
+.machine-drill-title { font-size: 10px; margin-bottom: 5px; }
+.machine-drill-field span { font-size: 8px; }
+.machine-drill-field .input { min-height: 28px; padding: 4px; font-size: 9px; }
+.small-button { padding: 5px 7px; font-size: 9px; }
+.output-sticky { padding: 16px; }
+.output-head h2 { font-size: 18px; }
+.output-area { min-height: 500px; font-size: 11px; line-height: 1.55; }
+.output-order, .copy-hint { font-size: 9px; }
+@media (max-width: 980px) {
+  main { max-width: 920px; }
+  .workspace { grid-template-columns: 1fr; gap: 18px; }
+}
+@media (max-width: 640px) {
+  main { padding-left: 10px; padding-right: 10px; }
+  .place-option { min-width: 0; flex: 1 1 130px; }
+  .module-option { min-width: 0; flex: 1 1 90px; }
+}
+
+/* 超精簡頁首：讓表單內容優先 */
+.topbar { height: 54px; }
+.brand strong { font-size: 13px; }
+.brand small { font-size: 8px; margin-top: 1px; }
+.brand-mark { width: 24px; height: 24px; padding: 4px; }
+.brand-mark i:nth-child(1) { height: 8px; }
+.brand-mark i:nth-child(2) { height: 12px; }
+.brand-mark i:nth-child(3) { height: 6px; }
+.topbar-note { font-size: 10px; }
+.hero { min-height: 0; height: 116px; padding: 15px 0 12px; align-items: center; gap: 18px; }
+.hero > div:first-child { min-width: 0; }
+.eyebrow { margin-bottom: 4px; font-size: 8px; }
+h1 { margin-bottom: 4px; font-size: clamp(24px, 3.2vw, 38px); letter-spacing: -.055em; line-height: 1.02; }
+h1 em::after { bottom: -2px; height: 4px; }
+.hero-copy { max-width: 680px; font-size: 10px; line-height: 1.35; margin: 0; }
+.hero-stamp { width: 62px; height: 62px; }
+.hero-stamp b { font-size: 14px; margin: 1px 0; }
+.hero-stamp span, .hero-stamp small { font-size: 7px; }
+.workspace { padding-top: 16px; }
+@media (max-width: 640px) {
+  .topbar { height: 48px; }
+  .topbar-note { display: none; }
+  .hero { height: auto; min-height: 94px; padding: 12px 0 10px; align-items: center; }
+  .hero-copy { display: none; }
+  .hero-stamp { width: 50px; height: 50px; }
+  .hero-stamp b { font-size: 12px; }
+  h1 { font-size: 25px; }
+}
+/* 沐浴口拉運：選填、可收合、緊湊排列 */
+.transport-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;border:0;background:transparent;color:var(--navy);padding:0;font-size:11px;font-weight:800;text-align:left;cursor:pointer}.transport-toggle .arrow{font-size:14px;color:var(--blue)}.transport-content{margin-top:7px}.transport-content[hidden]{display:none!important}.transport-multi{min-height:58px!important;padding:4px!important}.transport-hint{color:var(--muted);font-size:9px;margin:5px 0 0}
+
+/* FAB 沐浴口進料：橫向複選車輛 */
+.vehicle-picker{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:4px 0}.vehicle-picker label{display:inline-flex;align-items:center;gap:3px;padding:4px 6px;border:1px solid var(--line);border-radius:3px;background:#fff;color:var(--ink);font-size:9px;cursor:pointer}.vehicle-picker label:has(input:checked){background:var(--blue-soft);border-color:var(--blue);color:var(--blue);font-weight:800}.vehicle-picker input{margin:0;accent-color:var(--blue)}.vehicle-picker .vehicle-custom{border:0;background:transparent;padding:0}.vehicle-picker .vehicle-custom input{width:76px;min-height:23px;padding:3px 5px;border:1px solid var(--line);font-size:9px}
+</style>
+<script>
+// ===== 互動資料與狀態：修改預設機台、姓名與收尾話術可從這裡開始 =====
+const $ = (id) => document.getElementById(id);
+const state = { place: 'FAB', modules: new Set(['drill']), machines: [{ name: '', supervisor: '', tasks: '' }], rows: [
+  { name: '', size: '', qty: '', depth: '', start: '', end: '', role: '' },
+] };
+const presets = { 'pump-prep': ['PUMP', ['prep']], 'pump-organic': ['PUMP', ['prep','organic']], 'fab-organic': ['FAB', ['organic']], 'fab-drill': ['FAB', ['drill']], 'fab-drill-organic': ['FAB', ['drill','organic']] };
+const names = ['洸廷','紘碩','冠叡','叡竑','家逸','暐翔','翊修','益謙','明瑋','素綿姐','晏暘','金上原師傅','雲斌','小柯','哲銘','大哲銘','惠愈','筱茹'];
+const supervisorNames = ['監工/雲斌','監工/小柯','監工/哲銘','公安/惠愈','公安/筱茹','其他自行輸入'];
+// 收尾固定話術：依場所提供預設文字，仍可切換「自訂」後自行修改。
+const closePresets = { PUMP: '結束後清潔PUMP暫存區、整理工具及車輛，確認物料歸位後回報並離場。', FAB: '結束後清潔環境、做防護，並將工具拉回暫存區歸位。' };
+function get(id) { const el=$(id); if(!el)return ''; if(el.multiple)return [...el.selectedOptions].map(o=>o.value).join('、'); return el.value.trim() || ''; }
+function fmtTime(v) { if (!v) return ''; const [h,m] = v.split(':'); return `${Number(h)}.${m}`; }
+// 日期欄位使用日曆選擇器；輸出改為工作日誌慣用的 M/D 格式。
+function formatDateLabel(v) { if (!v) return ''; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${Number(m[2])}/${Number(m[3])}`:v; }
+function minutesBetween(a,b) { if (!a || !b) return 0; const [ah,am]=a.split(':').map(Number), [bh,bm]=b.split(':').map(Number); let n=bh*60+bm-ah*60-am; return n<0?n+1440:n; }
+function waitLabel(n) { if(!n)return '—'; const h=Math.floor(n/60),m=n%60; return h&&m?`${h} 小時 ${m} 分`:h?`${h} 小時`:`${m} 分`; }
+function moduleName() { return [...state.modules].map((m)=>({prep:'備料',organic:'有機',drill:'銑孔',transport:'拉車／交接',clean:'清潔／歸位'}[m])).join('、') || '尚未選擇'; }
+// 將收尾下拉選項套用到文字框；選「自訂」時保留使用者自行輸入的內容。
+function applyClosePreset(){const p=$('closePreset');if(!p||p.value==='custom')return;const text=closePresets[state.place]||closePresets.FAB;$('closeTalk').value=text;$('closeTalk').dispatchEvent(new Event('input',{bubbles:true}));}
+function syncClosePreset(){const close=$('closeTalk');if(!close)return;close.value=closePresets[state.place]||closePresets.FAB;close.dispatchEvent(new Event('input',{bubbles:true}));}
+// 依場所與拉運選項產生交接文字：PUMP 回暫存區，FAB 至沐浴口給人名。
+function transportText(){const kind=get('pumpTransportType'),person=get('pumpTransportPerson');return kind?`拉${kind}至沐浴口給${person||'人名'}`:'';}
+function joinCjk(values){const a=String(values||'').split('、').filter(Boolean);return a.length<=1?a[0]||'':a.length===2?`${a[0]}及${a[1]}`:`${a.slice(0,-1).join('、')}及${a.at(-1)}`;}
+function syncFabBathVehicles(){const values=[...document.querySelectorAll('[data-fab-vehicle]:checked')].map(x=>x.value);const custom=$('customFabVehicle')?.value.trim();if(custom)values.push(custom);$('fabBathVehicles').value=values.join('、');updateOutput();}
+function syncFabBathCompanions(){const values=[...document.querySelectorAll('[data-fab-companion]:checked')].map(x=>x.value);const custom=$('customFabCompanion')?.value.trim();if(custom)values.push(custom);$('fabBathCompanions').value=values.join('、');updateOutput();}
+function fabBathTransportText(){const vehicles=joinCjk(get('fabBathVehicles'));if(!vehicles)return '';const people=get('fabBathCompanions')||get('companions')||'同仁';return `與${people}至沐浴口拉${vehicles}`;}
+function syncHandover(){const h=$('handover');if(!h)return;const kind=get('pumpTransportType');if(state.place==='PUMP')h.value=kind?`至沐浴口回拉${kind}至暫存區`:'';h.dispatchEvent(new Event('input',{bubbles:true}));}
+function updateCombo() { $('comboNote').textContent=`目前組合：${state.place==='PUMP'?'PUMP 區':'FAB 內'} ＋ ${moduleName()}`; document.querySelectorAll('.place-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input').value===state.place)); }
+function setVisible() {
+  const isPump=state.place==='PUMP', has=(m)=>state.modules.has(m);
+  $('pumpTransportBox').hidden=!isPump;$('fabBathTransportBox').hidden=isPump;
+  document.querySelectorAll('.machine-drill-panel').forEach(x=>x.hidden=!(state.place==='FAB'&&has('drill')));
+  updateCombo(); updateOutput();
+}
+const summaryCatalog = {
+  "安防": [
+    "三角錐圍籬告示牌",
+    "做防護",
+    "拆防護",
+    "挖孔防護",
+    "機台防護",
+    "貼施工告示",
+    "回收角錐"
+  ],
+  "高架": [
+    "黏接孔膠帶",
+    "剪PVC布",
+    "搬梯",
+    "架梯",
+    "收梯",
+    "扶梯",
+    "爬梯",
+    "A字梯副手",
+    "傳遞物料",
+    "學習傳遞物料"
+  ],
+  "有機": [
+    "接CV",
+    "Epoxy拆防護",
+    "批土",
+    "天批",
+    "調批土",
+    "壁虎孔批土",
+    "Epoxy",
+    "壁虎孔油漆",
+    "打金鋼砂",
+    "塞發泡塞",
+    "打發泡",
+    "切發泡",
+    "防火泥",
+    "電泥",
+    "紮帶"
+  ],
+  "搬運": [
+    "拉車至各點",
+    "拉車至沐浴口",
+    "備料",
+    "進料",
+    "丟垃圾"
+  ],
+  "開孔": [
+    "挖孔",
+    "挖孔做防護",
+    "銑孔操刀",
+    "副手作業"
+  ],
+  "清潔檢整": [
+    "清潔環境及工具",
+    "清潔批土工具",
+    "交錐圍籬檢整歸位",
+    "檢整暫存區",
+    "檢整有機車",
+    "檢整接孔車"
+  ],
+  "現場巡檢": [
+    "巡檢機台",
+    "數壁虎孔",
+    "辦公室備料"
+  ]
+};
+function renderSummaryOptions(category){const body=$('summaryOptionsBody'),box=$('summaryOptions');if(!body||!box)return;const active=document.querySelector('.summary-category.active');if(active&&active.dataset.summaryCategory===category&&!box.hidden){box.hidden=true;active.classList.remove('active');return;}body.innerHTML='';const summaryStyle={安防:'safety',有機:'organic',搬運:'transport',開孔:'drill',高架:'height',清潔檢整:'clean','現場巡檢':'inspect'}; (summaryCatalog[category]||[]).forEach(text=>{const b=document.createElement('button');b.type='button';b.className=`summary-option summary-${summaryStyle[category]||'inspect'}`;b.textContent=text;b.addEventListener('click',()=>addPhrase('summary',text));body.appendChild(b);});box.hidden=false;document.querySelectorAll('[data-summary-category]').forEach(b=>b.classList.toggle('active',b.dataset.summaryCategory===category));}
+const toolCatalog = {
+  "推車": [
+    "有機車",
+    "吸水車",
+    "水車",
+    "接孔車",
+    "銑孔車",
+    "空推車",
+    "輪檔"
+  ],
+  "機具": [
+    "銑孔機",
+    "銑孔刀頭",
+    "真空泵",
+    "吸盤",
+    "挖孔工具",
+    "CV管",
+    "Y型過濾器",
+    "防護鐵板"
+  ],
+  "高處PPE": [
+    "A字梯",
+    "防墜器",
+    "安全帶",
+    "掃把",
+    "吸水布",
+    "肉色膠帶",
+    "大力膠帶",
+    "接孔膠帶",
+    "垃圾袋",
+    "小綠墊",
+    "PVC布",
+    "角錐圍籬連桿",
+    "施工告示牌"
+  ],
+  "手工具": [
+    "批土",
+    "批刀",
+    "攪批土工具",
+    "鐵錘",
+    "老虎鉗",
+    "捲尺",
+    "油漆刷",
+    "電鑽",
+    "挖孔工具"
+  ],
+  "有機": [
+    "角錐圍籬連桿",
+    "施工告示牌",
+    "養生膠帶（大／小）",
+    "垃圾袋",
+    "批土",
+    "Epoxy",
+    "金鋼砂",
+    "打沙",
+    "發泡塊",
+    "發泡",
+    "電泥",
+    "防火泥",
+    "油漆",
+    "防火帶",
+    "白鐵束圈"
+  ],
+  "一般快捷": [
+    "備料、檢整施工工具",
+    "鐵錘、吸水車、挖孔／銑孔工具",
+    "工具車、接孔車、水車及施工物料",
+    "工具、車輛及物料",
+    "清潔、6S、工具歸位",
+    "備料完成後拉車至沐浴口",
+    "備料完成後拉車至定點"
+  ]
+};
+function renderToolOptions(category){const body=$('toolOptionsBody'),box=$('toolOptions');if(!body||!box)return;const active=document.querySelector('.tool-category.active');if(active&&active.dataset.toolCategory===category&&!box.hidden){box.hidden=true;active.classList.remove('active');return;}body.innerHTML='';(toolCatalog[category]||[]).forEach(tool=>{const tr=document.createElement('tr');const td=document.createElement('td');const b=document.createElement('button');b.type='button';b.className='tool-option';b.textContent=tool;b.addEventListener('click',()=>addPhrase('materials',tool));td.appendChild(b);tr.appendChild(td);body.appendChild(tr);});box.hidden=false;document.querySelectorAll('[data-tool-category]').forEach(b=>b.classList.toggle('active',b.dataset.toolCategory===category));}
+const machinePhraseCatalog = {
+  "安全/清潔": [
+    "架設三角錐圍籬及告示牌",
+    "三角錐圍籬告示牌",
+    "環境干涉無施作",
+    "環境清潔",
+    "清潔環境及工具",
+    "工具歸位",
+    "車輛及物料歸位"
+  ],
+  "高架作業": [
+    "天批",
+    "架梯搬梯",
+    "架梯",
+    "扶梯",
+    "爬梯／離梯",
+    "A字梯副手作業",
+    "正確穿戴與勾掛安全帶",
+    "防火紮帶施作",
+    "接孔作業",
+    "接孔車整備",
+    "下層防護黏貼垃圾袋防漏水",
+    "移點位",
+    "拉車"
+  ],
+  "有機": [
+    "批土",
+    "壁虎孔批土",
+    "敲壁虎孔批土",
+    "機台Epoxy",
+    "壁虎孔Epoxy",
+    "貼施工告示",
+    "塞發泡",
+    "塞＋打發泡",
+    "電泥",
+    "打防火泥",
+    "做防護",
+    "整理有機車",
+    "有機溶劑作業確實防護",
+    "Epoxy、壁虎孔油漆、做防護",
+    "拆防護",
+    "接CV管",
+    "接 CV 管並落實跟抽作業",
+    "拉車"
+  ],
+  "現場資訊": [
+    "有機作業確實做好防護並回報監工",
+    "完成有機作業後清潔現場並將工具歸位",
+    "到定位確認施工點位",
+    "確認監工／公安及施工範圍",
+    "傳遞物料",
+    "回報監工／公安",
+    "確認施工區域復原",
+    "暫存區6S清潔",
+    "到機台位置時先將工具至定位",
+    "探孔完等待監工與廠商討論",
+    "環境干涉無施作"
+  ],
+  "開孔": [
+    "挖孔",
+    "銑孔",
+    "銑孔操刀",
+    "探孔",
+    "副手工作",
+    "卡刀排除",
+    "鋪放鐵板做防護",
+    "銑孔工具",
+    "拆防護"
+  ],
+  "機台防護": [
+    "偵煙器隔離",
+    "做好機台防護",
+    "機台防護",
+    "拆防護",
+    "環境清潔"
+  ]
+};
+const commonMachinePhrases = Object.values(machinePhraseCatalog).flat();
+function phraseCategory(text){
+  if(['有機車','有機作業','Epoxy','壁虎孔油漆','整理有機車'].some(k=>text.includes(k))) return 'organic';
+  if(['銑孔','挖孔','批土','接CV管','銑孔操刀'].some(k=>text.includes(k))) return 'drill';
+  if(['到機台位置時先將工具至定位','探孔完等待監工與廠商討論','環境干涉無施作'].some(k=>text.includes(k))) return 'fab-site';
+  return 'general';
+}
+function drillTextForMachine(m){
+  const groups=[];const byOperator=new Map();
+  (m.drills||[]).filter(d=>d.operator||d.size||d.start||d.role).forEach(d=>{
+    const key=d.operator||'未填人員';let g=byOperator.get(key);
+    if(!g){g={operator:d.operator||'',items:[],depths:[],roles:[]};byOperator.set(key,g);groups.push(g);}
+    if(d.size||d.qty)g.items.push({size:d.size||'',qty:d.qty||''});
+    if(d.depth&&!g.depths.includes(d.depth))g.depths.push(d.depth);
+    if(d.role){const role=String(d.role).replace(/^副手[：:]?\s*/,'');if(role&&!g.roles.includes(role))g.roles.push(role);}
+  });
+  return groups.map(g=>{const sizes=g.items.map(x=>x.size?`${x.size}”x${x.qty||''}`:(x.qty?`x${x.qty}`:'' )).filter(Boolean).join(' ');const depth=g.depths.length?`深度${g.depths.join('、')}`:'';const roles=g.roles.length?`副手：${g.roles.join('、')}`:'';return `${g.operator?g.operator+'操刀':''}${sizes}${depth}${roles}`.trim();}).filter(Boolean).join('\n');
+}
+function renderMachineRows(){const c=$('machineRows');if(!c)return;c.innerHTML='';state.machines.forEach((m,i)=>{m.drills=Array.isArray(m.drills)?m.drills:(i===0&&Array.isArray(state.rows)&&state.rows.length?state.rows.map(r=>({operator:r.name||'',size:r.size||'',qty:r.qty||'',depth:r.depth||'',start:r.start||'',end:r.end||'',role:r.role||''})):[{operator:'',size:'',qty:'',depth:'',start:'',end:'',role:''}]);const el=document.createElement('div');el.className='machine-row-card';const head=document.createElement('div');head.className='machine-row-head';const no=document.createElement('span');no.className='row-number';no.textContent=String(i+1).padStart(2,'0');const name=document.createElement('input');name.className='machine-input';name.placeholder='機台，例如：LBS-D08';name.value=m.name||'';const sup=document.createElement('input');sup.className='machine-input';sup.placeholder='監工／公安，例如：監工/雲斌';sup.setAttribute('list','supervisorList');sup.value=m.supervisor||'';const remove=document.createElement('button');remove.type='button';remove.className='remove-row';remove.textContent='×';head.append(no,name,sup,remove);const taskWrap=document.createElement('div');taskWrap.className='machine-task-wrap';const label=document.createElement('span');label.className='machine-task-label';label.textContent='本機台施作內容';const task=document.createElement('textarea');task.className='machine-task-input';task.placeholder='例如：挖孔、做防護；可自行輸入或點選下方常用語句';task.value=m.tasks||'';const phraseGroups=document.createElement('div');phraseGroups.className='machine-phrase-groups';const phraseCategoryBar=document.createElement('div');phraseCategoryBar.className='machine-phrase-categories';const phraseOptions=document.createElement('div');phraseOptions.className='machine-phrase-options';phraseOptions.hidden=true;const renderPhraseCategory=(category)=>{const active=phraseCategoryBar.querySelector('.active');if(active&&active.dataset.phraseCategory===category&&!phraseOptions.hidden){phraseOptions.hidden=true;active.classList.remove('active');return;}phraseOptions.innerHTML='';(machinePhraseCatalog[category]||[]).forEach(text=>{const b=document.createElement('button');b.type='button';b.className=`machine-phrase phrase-${phraseCategory(text)}`;b.textContent=text;b.addEventListener('click',()=>{const parts=task.value.trim()?task.value.split(/[,、;；\n]/).map(x=>x.trim()).filter(Boolean):[];if(!parts.includes(text))parts.push(text);task.value=parts.join('、');m.tasks=task.value;updateOutput();});phraseOptions.appendChild(b);});phraseOptions.hidden=false;phraseCategoryBar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.phraseCategory===category));};Object.keys(machinePhraseCatalog).forEach(category=>{const b=document.createElement('button');b.type='button';b.className='machine-phrase-category';b.dataset.phraseCategory=category;b.textContent=category;b.addEventListener('click',()=>renderPhraseCategory(category));phraseCategoryBar.appendChild(b);});const legend=document.createElement('div');legend.className='phrase-legend';legend.innerHTML='<span class=legend-organic>有機</span><span class=legend-drill>銑孔</span><span class=legend-fab>FAB現場</span><span class=legend-general>一般</span>';taskWrap.append(label,task,legend,phraseCategoryBar,phraseOptions);
+m.holePerson=m.holePerson||'';const drillPanel=document.createElement('div');drillPanel.className='machine-drill-panel';drillPanel.hidden=!(state.place==='FAB'&&state.modules.has('drill'));const drillTitle=document.createElement('button');drillTitle.type='button';drillTitle.className='machine-drill-title';drillTitle.innerHTML='FAB 銑孔明細（選填） <span class=drill-arrow>▸</span>';const drillRows=document.createElement('div');drillRows.className='machine-drill-rows';drillRows.hidden=true;const renderDrills=()=>{drillRows.innerHTML='';m.drills.forEach((d,di)=>{const row=document.createElement('div');row.className=`machine-drill-row${di?' drill-row-secondary':''}`;const makeSelect=(key,labelText,options)=>{const wrap=document.createElement('label');wrap.className='machine-drill-field';const label=document.createElement('span');label.textContent=labelText;const sel=document.createElement('select');sel.className='input';options.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v||'未選';if(v===d[key])o.selected=true;sel.appendChild(o);});sel.addEventListener('change',()=>{d[key]=sel.value;updateOutput();});wrap.append(label,sel);return wrap;};const makeInput=(key,labelText,type='text')=>{const wrap=document.createElement('label');wrap.className='machine-drill-field';const label=document.createElement('span');label.textContent=labelText;const inp=document.createElement('input');inp.className='input';inp.type=type;inp.value=d[key]||'';inp.placeholder=labelText;inp.addEventListener('input',()=>{d[key]=inp.value;updateOutput();});wrap.append(label,inp);return wrap;};row.append(makeSelect('operator','操刀人員',[...names,'其他']),makeSelect('size','尺寸（吋）',['','3','4','5','6','8','12','14']),makeSelect('qty','數量（顆）',['','1','2','3','4','5','6']),makeInput('depth','深度'),makeInput('start','開始','time'),makeInput('end','結束','time'),makeSelect('role','副手',['',...names]));const del=document.createElement('button');del.type='button';del.className='remove-row';del.textContent='×';del.addEventListener('click',()=>{if(m.drills.length===1)m.drills[0]={operator:'',size:'',qty:'',depth:'',start:'',end:'',role:''};else m.drills.splice(di,1);renderDrills();updateOutput();});row.appendChild(del);drillRows.appendChild(row);});};const add=document.createElement('button');add.type='button';add.className='small-button';add.textContent='＋ 新增銑孔明細';const drillContent=document.createElement('div');drillContent.className='machine-drill-content';drillContent.hidden=true;const holeWrap=document.createElement('label');holeWrap.className='machine-drill-field machine-hole-field';const holeLabel=document.createElement('span');holeLabel.textContent='下方接孔人員';const holeSelect=document.createElement('select');holeSelect.className='input';['',...names].forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v||'未選';if(v===m.holePerson)o.selected=true;holeSelect.appendChild(o);});holeSelect.addEventListener('change',()=>{m.holePerson=holeSelect.value;updateOutput();});holeWrap.append(holeLabel,holeSelect);drillContent.append(holeWrap,drillRows,add);drillTitle.addEventListener('click',()=>{const open=drillContent.hidden;drillContent.hidden=!open;drillTitle.querySelector('.drill-arrow').textContent=open?'▾':'▸';});add.addEventListener('click',()=>{m.drills.push({operator:'',size:'',qty:'',depth:'',start:'',end:'',role:''});renderDrills();updateOutput();});drillPanel.append(drillTitle,drillContent);renderDrills();[name,sup].forEach((inp,key)=>inp.addEventListener('input',()=>{m[key===0?'name':'supervisor']=inp.value;updateOutput();}));task.addEventListener('input',()=>{m.tasks=task.value;updateOutput();});remove.addEventListener('click',()=>{if(state.machines.length===1)state.machines[0]={name:'',supervisor:'',tasks:'',holePerson:'',drills:[{operator:'',size:'',qty:'',depth:'',start:'',end:'',role:''}]};else state.machines.splice(i,1);renderMachineRows();updateOutput();});el.append(head,taskWrap,drillPanel);c.appendChild(el);});}
+function machineText(){return state.machines.filter(m=>m.name||m.supervisor||m.tasks||m.holePerson||(m.drills||[]).some(d=>d.operator||d.size||d.start||d.role)).map(m=>{const head=`${m.name||'未填機台'}${m.supervisor?` ${m.supervisor}`:''}`.trim();const holeLine=m.holePerson?`\n下方接孔：${m.holePerson}`:'';const drill=drillTextForMachine(m);const drillLine=drill?`\n${drill}`:'';const taskLine=m.tasks?`\n施作內容：${m.tasks}`:'';return `${head}${holeLine}${drillLine}${taskLine}`;}).join('\n');}
+function renderRows() { const c=$('drillRows'); c.innerHTML=''; state.rows.forEach((r,i)=>{ const el=document.createElement('div'); el.className='drill-row'; el.innerHTML=`<span class="row-number">${String(i+1).padStart(2,'0')}</span><input data-key="name" value="${r.name||''}" placeholder="人員" list="nameList"><input data-key="size" value="${r.size||''}" placeholder="吋"><input data-key="qty" value="${r.qty||''}" placeholder="顆數"><input data-key="depth" value="${r.depth||''}" placeholder="深度"><input data-key="start" value="${r.start||''}" type="time"><input data-key="end" value="${r.end||''}" type="time"><input data-key="role" value="${r.role||''}" placeholder="副手／角色"><button class="remove-row" type="button">×</button>`; el.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{r[inp.dataset.key]=inp.value;updateOutput();})); el.querySelector('.remove-row').addEventListener('click',()=>{state.rows.length===1?state.rows[0]={name:'',size:'',qty:'',depth:'',start:'',end:'',role:''}:state.rows.splice(i,1);renderRows();updateOutput();}); c.appendChild(el); }); }
+function drillText(){return state.rows.filter(r=>r.name||r.size||r.start).map(r=>`${r.name||''}操刀${r.size?`${r.size}”x${r.qty||''}`:''}${r.depth?` 深度${r.depth}`:''}${r.start||r.end?`/${fmtTime(r.start)}-${fmtTime(r.end)}`:''}${r.role?` ${r.role}`:''}`.trim()).join('\n');}
+function updateWait(){const n=minutesBetween($('toolboxEnd').value,$('workStart').value);$('waitText').textContent=waitLabel(n);$('waitRound').textContent=n?`10 分鐘單位：${Math.ceil(n/10)*10} 分`:'請填兩個時間';}
+function buildLog(){const lines=[]; const date=formatDateLabel(get('date'))||'（日期）'; lines.push(`${date}執行項目`); if(get('plant'))lines.push(get('plant')); const te=fmtTime($('toolboxEnd').value), ws=fmtTime($('workStart').value), wait=minutesBetween($('toolboxEnd').value,$('workStart').value); if(te||ws)lines.push(`${te}工具箱結束${wait?` 在餐廳等待${wait>=60?`${Math.floor(wait/60)}小時`:''}${wait%60?'多':''}`:''} ${ws}上工`.trim()); if(get('companions')||get('materials')){const destination=`${state.place==='PUMP'?'PUMP區':'FAB'}${get('zone')&&get('zone')!=='無'?get('zone'):''}暫存區整備${get('materials')}`.trim();lines.push(get('companions')?`與${get('companions')}一同前往${destination}`:`自行前往${destination}`);} const mt=machineText(); if(mt)lines.push(`今日施作機台
+${mt}`); if(state.place==='PUMP'&&get('pumpTransportType'))lines.push(transportText()); if(state.place==='FAB'&&get('fabBathVehicles'))lines.push(fabBathTransportText()); if(get('closeTalk'))lines.push(get('closeTalk')); if(get('handover'))lines.push(get('handover')); if(get('leaveTalk'))lines.push(get('leaveTalk')); if(get('summary'))lines.push(`\n${get('summary')}`); return lines.filter(Boolean).join('\n');}
+function updateOutput(){updateWait();$('output').value=buildLog();localStorage.setItem('worklog-draft-v2',JSON.stringify({place:state.place,modules:[...state.modules],fields:Object.fromEntries(['date','plant','toolboxEnd','workStart','companions','area','zone','materials','prepNotes','pumpTransportType','pumpTransportPerson','preTalk','machine','supervisor','probeTalk','organicNotes','closeTalk','handover','leaveTalk','summary'].map(id=>[id,$(id)?.value||''])),machines:state.machines,rows:state.rows}));}
+function addPhrase(id,text){const f=$(id), parts=f.value.trim()?f.value.split(/[,、;；\n]/).map(x=>x.trim()).filter(Boolean):[];if(!parts.includes(text))parts.push(text);f.value=parts.join('、');f.dispatchEvent(new Event('input',{bubbles:true}));}
+function wire(){const syncCompanions=()=>{const checked=[...document.querySelectorAll('[data-companion]:checked')].map(x=>x.value);const custom=$('customCompanion')?.value.trim();if(custom)checked.push(custom);$('companions').value=checked.join('、');updateOutput();};document.querySelectorAll('[data-companion]').forEach(c=>c.addEventListener('change',syncCompanions));$('customCompanion')?.addEventListener('input',syncCompanions);document.querySelectorAll('[data-transport-toggle]').forEach(b=>b.addEventListener('click',()=>{const panel=$(b.dataset.transportToggle);if(!panel)return;panel.hidden=!panel.hidden;b.querySelector('.arrow').textContent=panel.hidden?'▸':'▾';}));document.querySelectorAll('[data-fab-vehicle]').forEach(c=>c.addEventListener('change',syncFabBathVehicles));$('customFabVehicle')?.addEventListener('input',syncFabBathVehicles);document.querySelectorAll('[data-fab-companion]').forEach(c=>c.addEventListener('change',syncFabBathCompanions));$('customFabCompanion')?.addEventListener('input',syncFabBathCompanions);['pumpTransportType','pumpTransportPerson'].forEach(id=>$(id)?.addEventListener('change',syncHandover));document.querySelectorAll('.input').forEach(e=>e.addEventListener('input',updateOutput));document.querySelectorAll('input[name="place"]').forEach(e=>e.addEventListener('change',()=>{state.place=e.value;syncClosePreset();syncHandover();setVisible();}));document.querySelectorAll('.module-option input').forEach(e=>e.addEventListener('change',()=>{state.modules=new Set([...document.querySelectorAll('.module-option input:checked')].map(x=>x.value));setVisible();}));document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{const [place,mods]=presets[b.dataset.preset];state.place=place;state.modules=new Set(mods);document.querySelector(`input[name="place"][value="${place}"]`).checked=true;document.querySelectorAll('.module-option input').forEach(x=>x.checked=mods.includes(x.value));document.querySelectorAll('.mode-button').forEach(x=>x.classList.toggle('active',x===b));setVisible();}));document.querySelectorAll('[data-target]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(b)addPhrase(g.dataset.target,b.textContent.trim());}));document.querySelectorAll('[data-tool-category]').forEach(b=>b.addEventListener('click',()=>renderToolOptions(b.dataset.toolCategory)));document.querySelectorAll('[data-summary-category]').forEach(b=>b.addEventListener('click',()=>renderSummaryOptions(b.dataset.summaryCategory)));document.querySelectorAll('[data-add-target]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button');if(b)addPhrase(g.dataset.addTarget,b.textContent.trim());}));document.querySelectorAll('[data-set]').forEach(b=>b.addEventListener('click',()=>{$(b.dataset.set).value=b.dataset.value;$(b.dataset.set).dispatchEvent(new Event('input',{bubbles:true}));}));$('pumpTransportType').addEventListener('change',syncHandover);$('pumpTransportPerson').addEventListener('input',syncHandover);$('addMachine').addEventListener('click',()=>{state.machines.push({name:'',supervisor:'',tasks:''});renderMachineRows();updateOutput();});$('copyButton').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('output').value);$('copyHint').textContent='已複製，可以直接貼回工作群組。';$('copyHint').classList.add('success');}catch{$('output').select();document.execCommand('copy');$('copyHint').textContent='已選取輸出文字。';}setTimeout(()=>$('copyHint').classList.remove('success'),2500);});$('clearButton').addEventListener('click',()=>{if(!confirm('確定清除目前內容？'))return;document.querySelectorAll('.input').forEach(e=>{if(e.tagName==='SELECT')e.selectedIndex=0;else e.value='';});state.machines=[{name:'',supervisor:'',tasks:''}];state.rows=[{name:'',size:'',qty:'',depth:'',start:'',end:'',role:''}];renderMachineRows();updateOutput();});}
+function restore(){try{const d=JSON.parse(localStorage.getItem('worklog-draft-v2'));if(!d)return;if(d.place)state.place=d.place;if(Array.isArray(d.modules))state.modules=new Set(d.modules);Object.entries(d.fields||{}).forEach(([id,v])=>{const el=$(id);if(!el)return;if(id==='companions'){const selected=String(v||'').split('、');el.value=String(v||'');document.querySelectorAll('[data-companion]').forEach(c=>c.checked=selected.includes(c.value));}else if(el.multiple){const selected=String(v||'').split('、');[...el.options].forEach(o=>o.selected=selected.includes(o.value));}else el.value=v;});if(Array.isArray(d.machines)&&d.machines.length)state.machines=d.machines;if(d.rows?.length)state.rows=d.rows;document.querySelector(`input[name="place"][value="${state.place}"]`).checked=true;document.querySelectorAll('.module-option input').forEach(x=>x.checked=state.modules.has(x.value));}catch{}}
+document.addEventListener('DOMContentLoaded',()=>{const dl=document.createElement('datalist');dl.id='nameList';names.forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});document.body.appendChild(dl);const sdl=document.createElement('datalist');sdl.id='supervisorList';supervisorNames.forEach(n=>{const o=document.createElement('option');o.value=n;sdl.appendChild(o);});document.body.appendChild(sdl);restore();syncClosePreset();if(!$('handover').value||$('handover').value==='拉水車至沐浴口給人名')syncHandover();renderMachineRows();wire();document.querySelectorAll('.place-option').forEach(x=>x.classList.toggle('selected',x.querySelector('input').checked));setVisible();});
+
+</script>
+</head>
+<body><div class="shell">
+<!-- 頁首：品牌與離線狀態 -->
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><span><strong>工作日誌</strong><small>PLACE × MODULE</small></span></a><div class="topbar-note"><span class="live-dot"></span>離線可用・場所＋工作模組</div></header>
+<main>
+<!-- 主視覺說明 -->
+<section class="hero"><div><p class="eyebrow">DAILY FIELD NOTE / 02</p><h1>先選在哪裡，<br /><em>再選做什麼。</em></h1><p class="hero-copy">PUMP 與 FAB 的工作內容分開管理；備料、有機、銑孔可自由組合。快速模式只是起點，仍可自行增減模組，輸出順序維持原本格式。</p></div><div class="hero-stamp"><span>組合式</span><b>FLEX</b><small>不綁死</small></div></section>
+<div class="workspace"><section class="form-column" aria-label="工作日誌填寫區">
+
+<!-- 區塊01：場所與工作模組；修改場所或模組請看此區 -->
+<div class="section-heading section-heading-spaced"><div class="section-index">01</div><div><p class="eyebrow">PLACE × MODULE</p><h2>場所</h2></div></div>
+<section class="card selector-card"><div class="selector-row"><div><span class="selector-label">場所 <b>*</b></span><div class="place-options"><label class="place-option"><input type="radio" name="place" value="PUMP" /><span><strong>PUMP 區</strong><small>備料、車輛、工具、交接</small></span></label><label class="place-option"><input type="radio" name="place" value="FAB" checked /><span><strong>FAB 內</strong><small>有機、銑孔、現場施工</small></span></label></div></div></div></section>
+
+<!-- 區塊02：日期、廠別與時間 -->
+<div class="section-heading section-heading-spaced"><div class="section-index">02</div><div><p class="eyebrow">BASE INFO</p><h2>基本資料與時間</h2></div></div>
+<section class="card basic-card"><div class="field-grid two"><label class="field"><span>日期 <b>*</b></span><input id="date" class="input" type="date" value="2026-10-03" aria-label="選擇工作日期" /></label><label class="field"><span>執行項目／廠別 <b>*</b></span><select id="plant" class="input"><option>F15A</option><option selected>F15B</option><option>其他</option></select></label></div><div class="time-strip"><label class="field"><span>工具箱結束</span><input id="toolboxEnd" class="input mono" type="time" value="08:40" /></label><div class="time-arrow">→</div><label class="field"><span>上工時間</span><input id="workStart" class="input mono" type="time" value="10:30" /></label><div class="wait-result"><span>等待</span><strong id="waitText">1 小時 50 分</strong><small id="waitRound">10 分鐘單位：110 分</small></div></div></section>
+
+<!-- 區塊03：同行、區域與備料 -->
+<div class="section-heading section-heading-spaced"><div class="section-index">03</div><div><p class="eyebrow">MOVE & SITE</p><h2>同行、區域與現場</h2></div></div>
+<section class="card"><div class="field-grid two"><label class="field field-wide"><span>同行人員</span><div id="companionsPicker" class="companion-picker" aria-label="可複選同行人員"><label><input type="checkbox" data-companion value="洸廷" />洸廷</label><label><input type="checkbox" data-companion value="紘碩" checked />紘碩</label><label><input type="checkbox" data-companion value="冠叡" checked />冠叡</label><label><input type="checkbox" data-companion value="叡竑" />叡竑</label><label><input type="checkbox" data-companion value="家逸" />家逸</label><label><input type="checkbox" data-companion value="暐翔" />暐翔</label><label><input type="checkbox" data-companion value="翊修" />翊修</label><label><input type="checkbox" data-companion value="益謙" />益謙</label><label><input type="checkbox" data-companion value="明瑋" />明瑋</label><label><input type="checkbox" data-companion value="素綿姐" />素綿姐</label><label><input type="checkbox" data-companion value="晏暘" />晏暘</label><label class="companion-custom"><span>其他</span><input id="customCompanion" type="text" placeholder="自行輸入" aria-label="自行輸入同行人員" /></label></div><input id="companions" type="hidden" value="紘碩、冠叡" /></label><label class="field"><span>作業區域</span><select id="area" class="input"><option>無塵室</option><option selected>PUMP區</option><option>沐浴口</option><option>其他</option></select></label><label class="field"><span>暫存區</span><select id="zone" class="input"><option>P1</option><option>P2</option><option>P3</option><option>P4</option><option>P5</option><option>P6</option><option selected>P7</option><option>無</option></select></label><label class="field field-wide"><span>備料／整備用具（含 PUMP 備料工作內容）</span><input id="materials" class="input" value="銑孔工具、吸水車、三角錐圍籬告示牌、CV管" placeholder="輸入工具、物料或 PUMP 備料工作內容" /></label></div><div class="quick-label">二、常用用具・點分類後選取加入備料欄</div><div class="tool-category-buttons"><button type="button" class="tool-category" data-tool-category="推車">推車</button><button type="button" class="tool-category" data-tool-category="機具">機具</button><button type="button" class="tool-category" data-tool-category="高處PPE">高處PPE</button><button type="button" class="tool-category" data-tool-category="手工具">手工具</button><button type="button" class="tool-category" data-tool-category="有機">有機</button><button type="button" class="tool-category tool-category-pump" data-tool-category="一般快捷">一般快捷</button></div><div id="toolOptions" class="tool-options" hidden><div class="tool-options-title">選取用具加入備料欄（再次點擊分類可收回）</div><table class="tool-table"><tbody id="toolOptionsBody"></tbody></table></div>
+
+<div id="pumpTransportBox" class="pump-transport-box">
+<button type="button" class="transport-toggle" data-transport-toggle="pumpTransportContent"><span>PUMP 拉運（選填）</span><span class="arrow">▾</span></button>
+<div id="pumpTransportContent" class="transport-content"><div class="field-grid two">
+<label class="field"><span>拉運對象</span><select id="pumpTransportType" class="input"><option value="">不使用</option><option>有機車</option><option>接孔車</option><option>有機車＋接孔車</option><option>物料</option></select></label>
+<label class="field"><span>交付人名</span><select id="pumpTransportPerson" class="input"><option value="">請選擇交付人名</option><option>洸廷</option><option>紘碩</option><option>冠叡</option><option>叡竑</option><option>家逸</option><option>暐翔</option><option>翊修</option><option>益謙</option><option>明瑋</option><option>素綿姐</option><option>晏暘</option><option>金上原師傅</option></select></label>
+</div></div></div>
+<div id="fabBathTransportBox" class="pump-transport-box" hidden>
+<button type="button" class="transport-toggle" data-transport-toggle="fabBathTransportContent"><span>沐浴口進料（選填）</span><span class="arrow">▾</span></button>
+<div id="fabBathTransportContent" class="transport-content"><div class="field-grid two">
+<label class="field field-wide"><span>同行人員（可複選）</span><div class="companion-picker" id="fabBathCompanionPicker" aria-label="沐浴口進料同行人員"><label><input type="checkbox" data-fab-companion value="洸廷" />洸廷</label><label><input type="checkbox" data-fab-companion value="紘碩" checked />紘碩</label><label><input type="checkbox" data-fab-companion value="冠叡" checked />冠叡</label><label><input type="checkbox" data-fab-companion value="叡竑" />叡竑</label><label><input type="checkbox" data-fab-companion value="家逸" />家逸</label><label><input type="checkbox" data-fab-companion value="暐翔" />暐翔</label><label><input type="checkbox" data-fab-companion value="翊修" />翊修</label><label><input type="checkbox" data-fab-companion value="益謙" />益謙</label><label><input type="checkbox" data-fab-companion value="明瑋" />明瑋</label><label><input type="checkbox" data-fab-companion value="素綿姐" />素綿姐</label><label><input type="checkbox" data-fab-companion value="晏暘" />晏暘</label><label class="companion-custom"><span>其他</span><input id="customFabCompanion" type="text" placeholder="自行輸入" aria-label="沐浴口進料其他同行人員" /></label></div><input id="fabBathCompanions" type="hidden" value="紘碩、冠叡" /></label>
+<label class="field field-wide"><span>拉運對象（可複選）</span><div class="vehicle-picker" id="fabBathVehiclePicker" aria-label="可複選拉運對象"><label><input type="checkbox" data-fab-vehicle value="有機車" />有機車</label><label><input type="checkbox" data-fab-vehicle value="接孔車" />接孔車</label><label><input type="checkbox" data-fab-vehicle value="水車" />水車</label><label><input type="checkbox" data-fab-vehicle value="發泡塊" />發泡塊</label><label><input type="checkbox" data-fab-vehicle value="刀頭" />刀頭</label><label><input type="checkbox" data-fab-vehicle value="告示牌" />告示牌</label><label><input type="checkbox" data-fab-vehicle value="角錐圍籬" />角錐圍籬</label><label class="vehicle-custom"><span>其他</span><input id="customFabVehicle" type="text" placeholder="自行輸入" aria-label="其他拉運對象" /></label></div><input id="fabBathVehicles" type="hidden" value="" /></label>
+</div><p class="transport-hint">未選擇拉運對象時不輸出；可按上方箭頭收合。</p></div></div>
+<!-- 區塊05：今日所有機台與各機台施作內容 -->
+<div class="section-heading section-heading-spaced"><div class="section-index">05</div><div><p class="eyebrow">TODAY'S MACHINES</p><h2>先填今日所有施作機台</h2></div><button id="addMachine" class="small-button" type="button">＋ 新增機台</button></div><section class="card machine-card"><p class="card-hint">先把今天預計施作的全部機台列出，再往下補充同行、現場狀況與銑孔明細。每台機台可填寫監工／公安與不同的施作內容，不分施工階段，集中於同一個常用施工項目選單，方便快速帶入。</p><div class="machine-rows" id="machineRows"></div></section>
+
+<!-- 區塊06：有機作業內容 -->
+
+
+<!-- 區塊07：收尾、交接與工作彙整 -->
+<div class="section-heading section-heading-spaced"><div class="section-index">07</div><div><p class="eyebrow">WRAP UP</p><h2>收尾、交接與工作彙整</h2></div></div><section class="card"><div class="field-grid two"><label class="field"><span>其他搬運／交接</span><input id="handover" class="input" value="" placeholder="其他搬運／交接（選填）" /></label><label class="field field-wide"><span>收尾固定話術（可自行修改）</span><textarea id="closeTalk" class="input textarea">結束後清潔環境、做防護，並將工具拉回暫存區歸位</textarea></label><label class="field field-wide"><span>離場／等待</span><input id="leaveTalk" class="input" value="16:00出無塵室至餐廳等待Pump區其他同仁16:50一起離廠" /></label></div><div class="quick-label">工作彙整・先選分類，再點選項目加入最後一行</div><div class="summary-category-buttons"><button type="button" class="summary-category" data-summary-category="安防">安防</button><button type="button" class="summary-category" data-summary-category="高架">高架</button><button type="button" class="summary-category" data-summary-category="有機">有機</button><button type="button" class="summary-category" data-summary-category="搬運">搬運</button><button type="button" class="summary-category" data-summary-category="開孔">開孔</button><button type="button" class="summary-category" data-summary-category="清潔檢整">清潔檢整</button><button type="button" class="summary-category" data-summary-category="現場巡檢">現場巡檢</button></div><div id="summaryOptions" class="summary-options" hidden><div class="summary-options-title">點選項目加入「最後工作彙整」（再次點擊分類可收回）</div><div id="summaryOptionsBody" class="summary-options-body"></div></div><label class="field summary-field"><span>最後工作彙整</span><textarea id="summary" class="input textarea">三角錐圍籬告示牌、接CV、銑孔操刀副手作業、拉車至各點、清潔環境及工具</textarea></label></section>
+</section>
+<aside class="output-column"><div class="output-sticky"><div class="output-head"><div><p class="eyebrow">OUTPUT / LIVE</p><h2>工作日誌預覽</h2></div><span class="output-status"><i></i>即時組字</span></div><div class="format-ruler"><span>原格式順序</span><span>PLACE → MODULE</span></div><textarea id="output" class="output-area" readonly></textarea><div class="output-actions"><button id="copyButton" class="primary-button"><span>複製工作日誌</span><kbd>⌘ C</kbd></button><button id="clearButton" class="ghost-button">清除</button></div><p id="copyHint" class="copy-hint">填寫左側欄位，右側會即時保留原格式。</p><div class="output-order"><span>組字規則</span><ol><li>日期／執行項目</li><li>場所＋模組</li><li>基本資料與上工</li><li>PUMP 備料工作內容</li><li>今日機台與各機台施作內容</li><li>模組專用內容</li><li>收尾與彙整</li></ol></div></div></aside>
+</div></main><footer><span>WORKLOG BOX</span><span>不改格式，靈活組合。</span></footer></div></body></html>
