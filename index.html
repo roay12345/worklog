@@ -3049,6 +3049,43 @@
           font-size: 15px;
         }
       }
+      /* 手機版銑孔明細：改為雙欄分組，避免七欄擠在同一列。 */
+      @media (max-width: 640px) {
+        .machine-drill-panel:not(.machine-bore-panel) .machine-drill-content {
+          padding: 9px;
+        }
+        .machine-drill-panel:not(.machine-bore-panel) .machine-drill-row {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+          gap: 9px 7px;
+          padding: 9px 0;
+        }
+        .machine-drill-panel:not(.machine-bore-panel)
+          .machine-drill-field
+          span,
+        .machine-drill-panel:not(.machine-bore-panel)
+          .drill-row-secondary
+          .machine-drill-field
+          span {
+          visibility: visible;
+          font-size: 10px;
+        }
+        .machine-drill-panel:not(.machine-bore-panel)
+          .machine-drill-field
+          .input {
+          min-height: 39px;
+          padding: 8px 7px;
+          font-size: 13px;
+        }
+        .machine-drill-panel:not(.machine-bore-panel) .machine-drill-row .remove-row {
+          grid-column: 2;
+          min-width: 100%;
+          min-height: 39px;
+        }
+        .machine-drill-panel:not(.machine-bore-panel) .machine-hole-field {
+          max-width: none;
+          margin-bottom: 12px;
+        }
+      }
     </style>
 <!-- 樣式區結束。 -->
     <!-- 程式區：管理表單狀態、快速選項、輸出組合與手機分頁流程。 -->
@@ -3096,8 +3133,6 @@ const names = [
         "翊修",
         "益謙",
         "明瑋",
-        "素綿姐",
-        "晏暘",
         "金上原師傅",
         "雲斌",
         "小柯",
@@ -3297,19 +3332,27 @@ function setVisible() {
           .querySelectorAll("[data-module-control]")
           .forEach((x) => (x.hidden = !has(x.dataset.moduleControl)));
         document.querySelectorAll(".machine-bore-panel").forEach((x) => {
-          x.hidden = !(
+          const visible =
             state.place === "FAB" &&
             has("bore") &&
-            x.dataset.enabled === "true"
-          );
+            x.dataset.enabled === "true";
+          x.hidden = !visible;
+          x.style.display =
+            visible && x.closest(".machine-row-card")?.dataset.machineTab === "detail"
+              ? ""
+              : "none";
         });
         document.querySelectorAll(".machine-drill-panel").forEach((x) => {
           if (x.classList.contains("machine-bore-panel")) return;
-          x.hidden = !(
+          const visible =
             state.place === "FAB" &&
             has("drill") &&
-            x.dataset.enabled === "true"
-          );
+            x.dataset.enabled === "true";
+          x.hidden = !visible;
+          x.style.display =
+            visible && x.closest(".machine-row-card")?.dataset.machineTab === "detail"
+              ? ""
+              : "none";
         });
         syncHandover();
         updateCombo();
@@ -3849,6 +3892,7 @@ function renderMachineRows() {
                 state.modules.has(key === "boreEnabled" ? "bore" : "drill") &&
                 cb.checked
               );
+              panel.style.display = panel.hidden ? "none" : "";
               updateOutput();
             });
             wrap.append(cb, text);
@@ -4181,7 +4225,7 @@ function renderMachineRows() {
           const syncMachineBase = () => {
             detailTab.disabled = !name.value.trim();
             if (window.innerWidth > 640)
-              setMachineTab(name.value.trim() ? "detail" : "base");
+              setMachineTab("detail");
           };
           name.addEventListener("input", syncMachineBase);
           mobileTabs.querySelectorAll("button").forEach((btn) =>
@@ -4189,7 +4233,7 @@ function renderMachineRows() {
               if (!btn.disabled) setMachineTab(btn.dataset.machineTab);
             }),
           );
-          setMachineTab(window.innerWidth <= 640 ? "detail" : "base");
+          setMachineTab("detail");
           syncMachineBase();
           el.append(
             head,
@@ -4728,6 +4772,20 @@ function wire() {
             if (e.tagName === "SELECT") e.selectedIndex = 0;
             else e.value = "";
           });
+          document
+            .querySelectorAll('input[type="checkbox"]')
+            .forEach((cb) => (cb.checked = false));
+          state.modules = new Set();
+          [
+            "companions",
+            "pumpInboundPeople",
+            "pumpInboundLocations",
+            "fabBathCompanions",
+            "fabBathVehicles",
+          ].forEach((id) => {
+            const el = $(id);
+            if (el) el.value = "";
+          });
           state.machines = [
             {
               name: "",
@@ -4750,6 +4808,7 @@ function wire() {
             },
           ];
           renderMachineRows();
+          setVisible();
           updateOutput();
         });
       }
@@ -4757,6 +4816,12 @@ function wire() {
         try {
           const d = JSON.parse(localStorage.getItem("worklog-draft-v2"));
           if (!d) return;
+          const removedPeople = new Set(["素綿姐", "晏暘"]);
+          const cleanPeopleValue = (value) =>
+            String(value || "")
+              .split("、")
+              .filter((name) => name && !removedPeople.has(name))
+              .join("、");
           if (d.place) state.place = d.place;
           if (Array.isArray(d.modules)) {
             const migrated = d.modules.map((m) =>
@@ -4767,18 +4832,25 @@ function wire() {
           Object.entries(d.fields || {}).forEach(([id, v]) => {
             const el = $(id);
             if (!el) return;
+            const value = [
+              "companions",
+              "pumpInboundPeople",
+              "fabBathCompanions",
+            ].includes(id)
+              ? cleanPeopleValue(v)
+              : v;
             if (id === "companions") {
-              const selected = String(v || "").split("、");
-              el.value = String(v || "");
+              const selected = String(value || "").split("、");
+              el.value = String(value || "");
               document
                 .querySelectorAll("[data-companion]")
                 .forEach((c) => (c.checked = selected.includes(c.value)));
             } else if (el.multiple) {
-              const selected = String(v || "").split("、");
+              const selected = String(value || "").split("、");
               [...el.options].forEach(
                 (o) => (o.selected = selected.includes(o.value)),
               );
-            } else el.value = v;
+            } else el.value = value;
           });
           if (Array.isArray(d.machines) && d.machines.length)
             state.machines = d.machines;
@@ -5135,22 +5207,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     />
                     明瑋
                   </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      data-pump-inbound-person
-                      value="素綿姐"
-                    />
-                    素綿姐
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      data-pump-inbound-person
-                      value="晏暘"
-                    />
-                    晏暘
-                  </label>
                   <label class="companion-custom">
                     <span>其他</span>
                     <input
@@ -5279,14 +5335,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     <label>
                       <input type="checkbox" data-companion value="明瑋" />
                       明瑋
-                    </label>
-                    <label>
-                      <input type="checkbox" data-companion value="素綿姐" />
-                      素綿姐
-                    </label>
-                    <label>
-                      <input type="checkbox" data-companion value="晏暘" />
-                      晏暘
                     </label>
                     <label class="companion-custom">
                       <span>其他</span>
@@ -5422,8 +5470,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         <option>翊修</option>
                         <option>益謙</option>
                         <option>明瑋</option>
-                        <option>素綿姐</option>
-                        <option>晏暘</option>
                         <option>金上原師傅</option>
                       </select>
                     </label>
@@ -5521,22 +5567,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             value="明瑋"
                           />
                           明瑋
-                        </label>
-                        <label>
-                          <input
-                            type="checkbox"
-                            data-fab-companion
-                            value="素綿姐"
-                          />
-                          素綿姐
-                        </label>
-                        <label>
-                          <input
-                            type="checkbox"
-                            data-fab-companion
-                            value="晏暘"
-                          />
-                          晏暘
                         </label>
                         <label class="companion-custom">
                           <span>其他</span>
@@ -5639,7 +5669,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <!-- 區塊05：今日所有機台與各機台施作內容 -->
             <div
               class="section-heading section-heading-spaced"
-              data-mobile-step="4"
+              data-mobile-step="5"
             >
               <div class="section-index">05</div>
               <div>
@@ -5662,7 +5692,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <!-- 區塊07：收尾、交接與工作彙整 -->
             <div
               class="section-heading section-heading-spaced"
-              data-mobile-step="5"
+              data-mobile-step="6"
             >
               <div class="section-index">07</div>
               <div>
